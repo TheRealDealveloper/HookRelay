@@ -1,4 +1,4 @@
-# Project 1: HookRelay â€” Webhook Relay & Inspector
+# HookRelay — Webhook Relay & Inspector
 
 ### What it is
 
@@ -6,7 +6,7 @@ A platform for receiving, inspecting, replaying, and forwarding webhooks. Develo
 
 ### Why it exists
 
-Debugging webhooks in production is painful. You can't see what was sent, you can't replay a failed delivery, and when something breaks at 2am you're reading logs. Tools like Hookdeck and RequestBin exist in this space â€” this is a self-built alternative that demonstrates deep understanding of event-driven architecture.
+Debugging webhooks in production is painful. You can't see what was sent, you can't replay a failed delivery, and when something breaks at 2am you're reading logs. Tools like Hookdeck and RequestBin exist in this space — this is a self-built alternative that demonstrates deep understanding of event-driven architecture.
 
 ### What it demonstrates
 
@@ -23,6 +23,7 @@ Debugging webhooks in production is painful. You can't see what was sent, you ca
 ### Tech stack
 
 - ASP.NET Core Web API (C#)
+- Blazor Server (dashboard frontend, real-time via built-in SignalR)
 - SignalR (real-time webhook streaming)
 - Azure Service Bus (message queue)
 - Redis (caching)
@@ -37,6 +38,6 @@ Debugging webhooks in production is painful. You can't see what was sent, you ca
 
 Three services:
 
-1. **Ingestion API** â€” receives incoming webhooks, validates, persists to database, publishes to Azure Service Bus
-2. **Delivery Worker** â€” consumes from queue, forwards to configured destinations, handles retries with exponential backoff, moves to dead letter queue on permanent failure
-3. **Dashboard API + Frontend** â€” displays live webhook stream via SignalR, browsable history with search/filter, replay button to re-enqueue a webhook, endpoint management, delivery metrics
+1. **Ingestion API** — receives incoming webhooks, validates, persists to database, publishes to Azure Service Bus
+2. **Delivery Worker** — consumes from queue, forwards to configured destinations, handles retries with exponential backoff, moves to dead letter queue on permanent failure
+3. **Dashboard API + Frontend** — displays live webhook stream via SignalR, browsable history with search/filter, replay button to re-enqueue a webhook, endpoint management, delivery metrics
