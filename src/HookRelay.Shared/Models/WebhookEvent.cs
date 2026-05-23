@@ -3,7 +3,7 @@
     public class WebhookEvent
     {
         public Guid Id { get; set; }
-        public Guid EndpointId { get; set; } = string.Empty;
+        public Guid EndpointId { get; set; } 
         public string HttpMethod {  get; set; } = string.Empty;
         public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
         public string Payload {  get; set; } = string.Empty;
