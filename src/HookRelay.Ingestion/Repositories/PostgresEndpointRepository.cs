@@ -1,0 +1,53 @@
+﻿using Dapper;
+using HookRelay.Shared.Interfaces;
+using Npgsql;
+using Endpoint = HookRelay.Shared.Models.Endpoint;
+
+namespace HookRelay.Ingestion.Repositories
+{
+    public class PostgresEndpointRepository : IEndpointRepository
+    {
+        private readonly string _connectionString;
+        public PostgresEndpointRepository(string connectionString)  
+        {
+            _connectionString = connectionString;
+        }
+
+        public Task<Shared.Models.Endpoint> CreateAsync(Shared.Models.Endpoint endpoint, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IReadOnlyList<Shared.Models.Endpoint>> GetAllAsync(CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<Endpoint?> GetByApiKeyAsync(string apiKey, CancellationToken ct = default)
+        {
+            Endpoint? result = null;
+            const string sql = @"SELECT * FROM endpoints WHERE api_key = @ApiKey";
+
+            using var connection = new NpgsqlConnection(_connectionString);
+            connection.Open();
+            result = await connection.QueryFirstOrDefaultAsync<Endpoint?>(sql, new { ApiKey = apiKey });
+
+            return result;
+        }
+
+        public Task<Shared.Models.Endpoint?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Shared.Models.Endpoint> UpdateAsync(Shared.Models.Endpoint endpoint, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}
