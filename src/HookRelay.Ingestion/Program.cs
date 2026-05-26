@@ -3,11 +3,15 @@ using HookRelay.Ingestion.Repositories;
 using HookRelay.Ingestion.TypeHandlers;
 using HookRelay.Shared.Interfaces;
 using HookRelay.Shared.Models;
+using HookRelay.Shared.Messaging;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 builder.Services.AddSingleton<IEndpointRepository>(new PostgresEndpointRepository(builder.Configuration["ConnectionStrings:PostgreSQL"] ?? ""));
 builder.Services.AddSingleton<IWebhookRepository>(new PostgresWebhookRepository(builder.Configuration["ConnectionStrings:PostgreSQL"] ?? ""));
+var messageBus = await RabbitMqMessageBus.CreateAsync(builder.Configuration["ConnectionStrings:RabbitMQ"] ?? "");
+builder.Services.AddSingleton<IMessageBus>(messageBus);
 builder.Services.AddCors();
 
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
@@ -17,7 +21,7 @@ var app = builder.Build();
 app.UseCors(p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
 // Minimal API
-app.MapPost("/hook/{apiKey}", async (string apiKey, HttpContext context, IEndpointRepository endpointRepo, IWebhookRepository webhookRepo)  => 
+app.MapPost("/hook/{apiKey}", async (string apiKey, HttpContext context, IEndpointRepository endpointRepo, IWebhookRepository webhookRepo, IMessageBus messageBus)  => 
 {
     var endpoint = await endpointRepo.GetByApiKeyAsync(apiKey);
     if (endpoint == null) return Results.NotFound();
@@ -39,7 +43,8 @@ app.MapPost("/hook/{apiKey}", async (string apiKey, HttpContext context, IEndpoi
         QueryString = context.Request.QueryString.Value,
         SourceIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown"
     };
-    await webhookRepo.SaveAsync(webhookEvent);
+    var saved = await webhookRepo.SaveAsync(webhookEvent);
+    await messageBus.PublishAsync(new WebhookMessage{ WebhookEventId = saved.Id, EnqueuedAt = DateTime.UtcNow });
     return Results.Ok();
 });
 
