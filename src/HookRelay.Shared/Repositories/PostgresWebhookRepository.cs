@@ -3,7 +3,7 @@ using HookRelay.Shared.Interfaces;
 using HookRelay.Shared.Models;
 using Npgsql;
 
-namespace HookRelay.Ingestion.Repositories
+namespace HookRelay.Shared.Repositories
 {
     public class PostgresWebhookRepository : IWebhookRepository
     {
@@ -22,9 +22,11 @@ namespace HookRelay.Ingestion.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<WebhookEvent?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        public async Task<WebhookEvent?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            const string sql = @"SELECT * from webhook_events WHERE id = @Id";
+            using var connection = new NpgsqlConnection(_connectionString);
+            return await connection.QuerySingleOrDefaultAsync<WebhookEvent>(sql, new { Id = id });
         }
 
         public async Task<WebhookEvent> SaveAsync(WebhookEvent webhookEvent, CancellationToken ct = default)

@@ -1,9 +1,10 @@
 ﻿using Dapper;
 using HookRelay.Shared.Interfaces;
+using HookRelay.Shared.Models;
 using Npgsql;
 using Endpoint = HookRelay.Shared.Models.Endpoint;
 
-namespace HookRelay.Ingestion.Repositories
+namespace HookRelay.Shared.Repositories
 {
     public class PostgresEndpointRepository : IEndpointRepository
     {
@@ -13,7 +14,7 @@ namespace HookRelay.Ingestion.Repositories
             _connectionString = connectionString;
         }
 
-        public Task<Shared.Models.Endpoint> CreateAsync(Shared.Models.Endpoint endpoint, CancellationToken ct = default)
+        public Task<Endpoint> CreateAsync(Endpoint endpoint, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
@@ -23,7 +24,7 @@ namespace HookRelay.Ingestion.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<IReadOnlyList<Shared.Models.Endpoint>> GetAllAsync(CancellationToken ct = default)
+        public Task<IReadOnlyList<Endpoint>> GetAllAsync(CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
@@ -40,12 +41,14 @@ namespace HookRelay.Ingestion.Repositories
             return result;
         }
 
-        public Task<Shared.Models.Endpoint?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        public async Task<Endpoint?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            const string sql = @"SELECT * from endpoints WHERE id = @Id";
+            using var connection = new NpgsqlConnection(_connectionString);
+            return await connection.QuerySingleOrDefaultAsync<Endpoint>(sql, new { Id = id });
         }
 
-        public Task<Shared.Models.Endpoint> UpdateAsync(Shared.Models.Endpoint endpoint, CancellationToken ct = default)
+        public Task<Endpoint> UpdateAsync(Shared.Models.Endpoint endpoint, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }

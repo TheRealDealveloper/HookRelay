@@ -1,5 +1,6 @@
 ﻿using HookRelay.Shared.Interfaces;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 using System.Text.Json;
 
 namespace HookRelay.Shared.Messaging
@@ -44,7 +45,14 @@ namespace HookRelay.Shared.Messaging
 
         public async Task SubscribeAsync<T>(Func<T, CancellationToken, Task> handler, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            var consumer = new AsyncEventingBasicConsumer(_channel);
+            consumer.ReceivedAsync += async (sender, ea) => 
+            {
+                var message = JsonSerializer.Deserialize<T>(ea.Body.ToArray());
+                await handler(message!, ct);
+                await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken: ct);
+            };
+            await _channel.BasicConsumeAsync(queue: QueueName, autoAck: false, consumer: consumer, cancellationToken: ct);
         }
     }
 }

@@ -2,7 +2,7 @@
 using System.Data;
 using System.Text.Json;
 
-namespace HookRelay.Ingestion.TypeHandlers
+namespace HookRelay.Shared.TypeHandlers
 {
     public class JsonDictionaryTypeHandler : SqlMapper.TypeHandler<Dictionary<string, string>>
     {

@@ -1,10 +1,10 @@
 using Dapper;
-using HookRelay.Ingestion.Repositories;
-using HookRelay.Ingestion.TypeHandlers;
+using HookRelay.Shared.Repositories;
 using HookRelay.Shared.Interfaces;
 using HookRelay.Shared.Models;
 using HookRelay.Shared.Messaging;
 using Microsoft.Extensions.DependencyInjection;
+using HookRelay.Shared.TypeHandlers;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
