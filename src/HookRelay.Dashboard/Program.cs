@@ -3,6 +3,7 @@ using HookRelay.Dashboard.Components;
 using HookRelay.Shared.Interfaces;
 using HookRelay.Shared.Repositories;
 using HookRelay.Shared.TypeHandlers;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
@@ -18,6 +19,8 @@ builder.Services.AddScoped(sp => new HttpClient
 var connectionString = builder.Configuration["ConnectionStrings:PostgreSQL"] ?? "";
 builder.Services.AddSingleton<IEndpointRepository>(new PostgresEndpointRepository(connectionString));
 builder.Services.AddSingleton<IWebhookRepository>(new PostgresWebhookRepository(connectionString));
+builder.Services.AddSingleton<IDeliveryAttemptRepository>(new PostgresDeliveryAttemptRepository(connectionString));
+
 SqlMapper.AddTypeHandler(new JsonDictionaryTypeHandler());
 Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 

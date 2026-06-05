@@ -13,6 +13,7 @@ Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 var connectionString = builder.Configuration["ConnectionStrings:PostgreSQL"] ?? "";
 builder.Services.AddSingleton<IEndpointRepository>(new PostgresEndpointRepository(connectionString));
 builder.Services.AddSingleton<IWebhookRepository>(new PostgresWebhookRepository(connectionString));
+builder.Services.AddSingleton<IDeliveryAttemptRepository>(new PostgresDeliveryAttemptRepository(connectionString));
 
 var messageBus = await RabbitMqMessageBus.CreateAsync(builder.Configuration["ConnectionStrings:RabbitMQ"] ?? "");
 builder.Services.AddSingleton<IMessageBus>(messageBus);

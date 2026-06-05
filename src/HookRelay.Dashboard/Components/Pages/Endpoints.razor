@@ -97,8 +97,8 @@
             CreatedAt = DateTime.UtcNow
         };
 
-        await endpointRepository.CreateAsync(newEndpoint);
-        endpoints.Add(newEndpoint);
+        var created = await endpointRepository.CreateAsync(newEndpoint);
+        if (created != null) endpoints.Add(created);
 
         newName = "";
         newUrl = "";

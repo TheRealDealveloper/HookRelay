@@ -14,9 +14,12 @@ namespace HookRelay.Shared.Repositories
             _connectionString = connectionString;
         }
 
-        public Task<Endpoint> CreateAsync(Endpoint endpoint, CancellationToken ct = default)
+        public async Task<Endpoint?> CreateAsync(Endpoint endpoint, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            const string sql = @"INSERT INTO endpoints (name, url, api_key, is_active) VALUES (@Name, @Url, @ApiKey, @IsActive) RETURNING *";
+            using var connection = new NpgsqlConnection(_connectionString);
+            var result = await connection.QueryFirstOrDefaultAsync<Endpoint>(sql, endpoint);
+            return result;
         }
 
         public Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)

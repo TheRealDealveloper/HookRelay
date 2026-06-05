@@ -12,7 +12,7 @@ namespace HookRelay.Shared.Models
         public string? ResponseBody { get; set; }
         public string? Error { get; set; }
         public long DurationMs { get; set; }
-        public DeliveryStatus DeliveryStatus { get; set; }
+        public string DeliveryStatus { get; set; } = "";
         public DateTime AttemptedAt { get; set; }
     }
 }
