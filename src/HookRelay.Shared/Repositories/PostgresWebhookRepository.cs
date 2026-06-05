@@ -17,9 +17,12 @@ namespace HookRelay.Shared.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<IReadOnlyList<WebhookEvent>> GetByEndpointIdAsync(Guid id, int page, int pageSize, CancellationToken ct = default)
+        public async Task<IReadOnlyList<WebhookEvent>> GetByEndpointIdAsync(Guid id, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            const string sql = @"SELECT * from webhook_events WHERE endpoint_id = @Id";
+            using var connection = new NpgsqlConnection(_connectionString);
+            var result = await connection.QueryAsync<WebhookEvent>(sql, new { Id = id });
+            return result.ToList();
         }
 
         public async Task<WebhookEvent?> GetByIdAsync(Guid id, CancellationToken ct = default)

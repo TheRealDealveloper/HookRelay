@@ -24,9 +24,12 @@ namespace HookRelay.Shared.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<IReadOnlyList<Endpoint>> GetAllAsync(CancellationToken ct = default)
+        public async Task<IReadOnlyList<Endpoint>> GetAllAsync(CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            const string sql = @"SELECT * from endpoints";
+            using var connection = new NpgsqlConnection(_connectionString);
+            var result = await connection.QueryAsync<Endpoint>(sql);
+            return result.ToList();
         }
 
         public async Task<Endpoint?> GetByApiKeyAsync(string apiKey, CancellationToken ct = default)
