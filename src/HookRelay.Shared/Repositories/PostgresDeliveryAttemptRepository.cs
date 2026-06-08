@@ -37,10 +37,25 @@ namespace HookRelay.Shared.Repositories
             return results.ToDictionary(a => a.WebhookId);
         }
 
-        public async Task<DeliveryAttempt?> SaveAsync(DeliveryAttempt deliveryAttempt, CancellationToken ct = default)
+        public async Task<DeliveryAttempt> SaveAsync(DeliveryAttempt deliveryAttempt, CancellationToken ct = default)
         {
             const string sql = @"INSERT INTO delivery_attempt (webhook_id, endpoint_id, attempt_number, status_code, response_body, error, duration_ms, delivery_status, attempted_at) 
                 VALUES (@WebhookId, @EndpointId, @AttemptNumber, @StatusCode, @ResponseBody, @Error, @DurationMs, @DeliveryStatus, @AttemptedAt) RETURNING *";
+            using var connection = new NpgsqlConnection(_connectionString);
+            var result = await connection.QueryFirstAsync<DeliveryAttempt>(sql, deliveryAttempt);
+            return result;
+        }
+
+        public async Task<DeliveryAttempt?> UpdateAsync(DeliveryAttempt deliveryAttempt, CancellationToken ct = default)
+        {
+            const string sql = @" UPDATE delivery_attempt
+              SET status_code = @StatusCode,
+                  response_body = @ResponseBody,
+                  error = @Error,
+                  duration_ms = @DurationMs,
+                  delivery_status = @DeliveryStatus
+              WHERE id = @Id
+              RETURNING *";
             using var connection = new NpgsqlConnection(_connectionString);
             var result = await connection.QueryFirstOrDefaultAsync<DeliveryAttempt>(sql, deliveryAttempt);
             return result;

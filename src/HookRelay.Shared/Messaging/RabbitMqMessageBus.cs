@@ -2,6 +2,7 @@
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text.Json;
+using System.Threading.Channels;
 
 namespace HookRelay.Shared.Messaging
 {
@@ -9,7 +10,9 @@ namespace HookRelay.Shared.Messaging
     {
         private readonly IConnection _connection;
         private readonly IChannel _channel;
-        private const string QueueName = "webhook-delivery";
+        private const string QueueDeliveryName = "webhook-delivery";
+        private const string QueueDeadletterName = "webhook-deadletter";
+        private const string QueueRetryName = "webhook-retry";
 
         public static async Task<RabbitMqMessageBus> CreateAsync(string connectionString)
         {
@@ -17,10 +20,24 @@ namespace HookRelay.Shared.Messaging
             var connection = await factory.CreateConnectionAsync();
             var channel = await connection.CreateChannelAsync();
             await channel.QueueDeclareAsync(
-                queue: QueueName,
+                queue: QueueDeliveryName,
                 durable: true,
                 exclusive: false,
                 autoDelete: false);
+            await channel.QueueDeclareAsync(
+              queue: QueueDeadletterName,
+              durable: true,
+              exclusive: false,
+              autoDelete: false);
+            await channel.QueueDeclareAsync(
+              queue: QueueRetryName,
+              durable: true,
+              exclusive: false,
+              arguments: new Dictionary<string, object?> {
+                { "x-dead-letter-exchange", "" },
+                { "x-dead-letter-routing-key", QueueDeliveryName}
+                },
+              autoDelete: false);
             return new RabbitMqMessageBus(connection, channel);
         }
 
@@ -39,8 +56,7 @@ namespace HookRelay.Shared.Messaging
         public async Task PublishAsync<T>(T message, CancellationToken ct = default)
         {
             var body = JsonSerializer.SerializeToUtf8Bytes(message);
-            await _channel.BasicPublishAsync(exchange: "", routingKey: QueueName, body: body, cancellationToken: ct);
-
+            await _channel.BasicPublishAsync(exchange: "", routingKey: QueueDeliveryName, body: body, cancellationToken: ct);
         }
 
         public async Task SubscribeAsync<T>(Func<T, CancellationToken, Task> handler, CancellationToken ct = default)
@@ -52,7 +68,19 @@ namespace HookRelay.Shared.Messaging
                 await handler(message!, ct);
                 await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken: ct);
             };
-            await _channel.BasicConsumeAsync(queue: QueueName, autoAck: false, consumer: consumer, cancellationToken: ct);
+            await _channel.BasicConsumeAsync(queue: QueueDeliveryName, autoAck: false, consumer: consumer, cancellationToken: ct);
+        }
+
+        public async Task PublishToRetryAsync<T>(T message, int delayMs, CancellationToken ct = default)
+        {
+            var body = JsonSerializer.SerializeToUtf8Bytes(message);
+            await _channel.BasicPublishAsync(exchange: "", routingKey: QueueRetryName, false, new BasicProperties { Expiration = delayMs.ToString() }, body: body, cancellationToken: ct);
+        }
+
+        public async Task PublishToDeadLetterAsync<T>(T message, CancellationToken ct = default)
+        {
+            var body = JsonSerializer.SerializeToUtf8Bytes(message);
+            await _channel.BasicPublishAsync(exchange: "", routingKey: QueueDeadletterName, body: body, cancellationToken: ct);
         }
     }
 }

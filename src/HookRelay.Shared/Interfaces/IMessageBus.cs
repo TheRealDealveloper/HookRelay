@@ -3,6 +3,8 @@
     public interface IMessageBus
     {
         Task PublishAsync<T>(T message, CancellationToken ct = default);
+        Task PublishToRetryAsync<T>(T message, int delayMs, CancellationToken ct = default);
+        Task PublishToDeadLetterAsync<T>(T message, CancellationToken ct = default);
         Task SubscribeAsync<T>(Func<T, CancellationToken, Task> handler, CancellationToken ct = default);
     }
 }
