@@ -25,6 +25,18 @@ namespace HookRelay.Shared.Repositories
             return result;
         }
 
+        public async Task<Dictionary<Guid, DeliveryAttempt>> GetLatestAttemptsByWebhookIdsAsync(IEnumerable<Guid> webhookEventIds, CancellationToken ct = default)
+        {
+            var ids = webhookEventIds.ToList();
+            if (ids.Count == 0) return new Dictionary<Guid, DeliveryAttempt>();
+
+            const string sql = @"SELECT DISTINCT ON (webhook_id) * FROM delivery_attempt
+                WHERE webhook_id = ANY(@Ids) ORDER BY webhook_id, attempt_number DESC";
+            using var connection = new NpgsqlConnection(_connectionString);
+            var results = await connection.QueryAsync<DeliveryAttempt>(sql, new { Ids = ids });
+            return results.ToDictionary(a => a.WebhookId);
+        }
+
         public async Task<DeliveryAttempt?> SaveAsync(DeliveryAttempt deliveryAttempt, CancellationToken ct = default)
         {
             const string sql = @"INSERT INTO delivery_attempt (webhook_id, endpoint_id, attempt_number, status_code, response_body, error, duration_ms, delivery_status, attempted_at) 

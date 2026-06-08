@@ -2,6 +2,7 @@
 @using System.Text.Json
 @inject IWebhookRepository webhookRepository
 @inject IEndpointRepository endpointRepository
+@inject IDeliveryAttemptRepository deliveryAttemptRepository
 @rendermode InteractiveServer
 
 <PageTitle>Webhook Events</PageTitle>
@@ -33,6 +34,23 @@
                 <td><span class="badge bg-primary">@evt.HttpMethod</span></td>
                 <td><code>@evt.SourceIp</code></td>
                 <td>
+                    @if (deliveryMap.TryGetValue(evt.Id, out var attempt))
+                    {
+                        <span class="badge @GetStatusBadgeClass(attempt.DeliveryStatus)">
+                            @attempt.DeliveryStatus
+                        </span>
+                        <small class="text-muted ms-1">@(attempt.DurationMs)ms</small>
+                        @if (attempt.StatusCode.HasValue)
+                        {
+                            <small class="text-muted ms-1">(@attempt.StatusCode)</small>
+                        }
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">No attempt</span>
+                    }
+                </td>
+                <td>
                     <button class="btn btn-sm btn-outline-secondary" @onclick="() => ToggleDetail(evt.Id)">
                         @(expandedId == evt.Id ? "Hide" : "Detail")
                     </button>
@@ -47,6 +65,16 @@
                             <pre class="mb-2" style="max-height: 150px; overflow-y: auto;">@FormatHeaders(evt.Headers)</pre>
                             <h6>Payload</h6>
                             <pre style="max-height: 300px; overflow-y: auto;">@evt.Payload</pre>
+                            @if (deliveryMap.TryGetValue(evt.Id, out var detail))
+                            {
+                                <h6>Delivery Response</h6>
+                                <pre style="max-height: 200px; overflow-y: auto;">@(detail.ResponseBody ?? "N/A")</pre>
+                                @if (!string.IsNullOrEmpty(detail.Error))
+                                {
+                                    <h6 class="text-danger">Error</h6>
+                                    <pre class="text-danger">@detail.Error</pre>
+                                }
+                            }
                         </div>
                     </td>
                 </tr>
@@ -62,6 +90,7 @@
     private string endpointName = "";
     private string endpointUrl = "";
     private List<WebhookEvent> events = new();
+    private Dictionary<Guid, DeliveryAttempt> deliveryMap = new();
     private Guid? expandedId;
 
     protected override async Task OnInitializedAsync()
@@ -72,6 +101,11 @@
         var endpoint = await endpointRepository.GetByIdAsync(EndpointId);
         endpointName = endpoint?.Name ?? "Unknown";
         endpointUrl = endpoint?.Url ?? "";
+
+        if (events.Count > 0)
+        {
+            deliveryMap = await deliveryAttemptRepository.GetLatestAttemptsByWebhookIdsAsync(events.Select(e => e.Id));
+        }
     }
 
     private void ToggleDetail(Guid id)
@@ -82,5 +116,16 @@
     private string FormatHeaders(Dictionary<string, string> headers)
     {
         return JsonSerializer.Serialize(headers, new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Success" => "bg-success",
+            "Failed" => "bg-danger",
+            "Pending" => "bg-warning text-dark",
+            _ => "bg-secondary"
+        };
     }
 }
